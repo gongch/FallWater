@@ -259,7 +259,7 @@ namespace WallWater
                     //
                     //  Nothing to do
                     //
-                    if ((_offX == 0) && (_offY == 0)) continue;
+                    //if ((_offX == 0) && (_offY == 0)) continue;
                     //
                     //  Fix boundaries
                     //

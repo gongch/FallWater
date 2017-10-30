@@ -1,21 +1,10 @@
-﻿#define _BUFFERED_RENDERING
-#define _JAGGED_ARRAYS
-
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Drawing;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Windows.Threading;
 
 namespace WallWater
@@ -37,7 +26,6 @@ namespace WallWater
         private static int _BITMAP_HEIGHT = 0;
         private static int _BITS = 4; /* Dont change this, it 24 bit bitmaps are not supported*/
         private static DropData[] _drops;
-        private FastBitmap _image = null;
         private FastBitmap _originalImage = null;
         public int _currentHeightBuffer = 0;
         public int _newHeightBuffer = 0;
@@ -48,15 +36,7 @@ namespace WallWater
         ImageBrush _imageBrush= new ImageBrush();
         byte[] _bufferBits;
 
-#if _JAGGED_ARRAYS
         private static int[][][] _waveHeight;
-#endif
-#if _RECTANGULAR_ARRAYS
-        private static int[,,] _waveHeight;
-#endif
-#if _LINEAR_ARRAYS
-        private static int[] _waveHeight;
-#endif
 
 
         public MainWindow()
@@ -67,7 +47,6 @@ namespace WallWater
             _BITMAP_HEIGHT = bitmap.Height;
             ImageGrid.Background = _imageBrush;
             _wb = new WriteableBitmap(_BITMAP_WIDTH, _BITMAP_HEIGHT, 96,96,PixelFormats.Bgr32,null);
-#if _JAGGED_ARRAYS
             _waveHeight = new int[2][][];
             for (int i = 0; i < 2; i++)
             {
@@ -77,18 +56,9 @@ namespace WallWater
                     _waveHeight[i][j] = new int[_BITMAP_HEIGHT];
                 }
             }
-#endif
-#if _RECTANGULAR_ARRAYS
-            _waveHeight = new int[_BITMAP_WIDTH, _BITMAP_HEIGHT, 2];
-#endif
-
-#if _LINEAR_ARRAYS
-            _waveHeight = new int[_BITMAP_WIDTH * _BITMAP_HEIGHT * 2];
-#endif
 
 
             CreateBitmap();
-            CreateWaterDrops();
 
             waterTime.Tick += waterTime_Tick;
             waterTime.Interval = TimeSpan.FromMilliseconds(10);
@@ -107,10 +77,10 @@ namespace WallWater
             }
             this.Dispatcher.Invoke(new Action(() => {
                 _wb.Lock();
-                _image.LockBits();
-                memcpy(_wb.BackBuffer, _image.Data().Scan0, (uint)(_wb.BackBufferStride * _wb.Height));
+
+                Marshal.Copy(_bufferBits, 0, _wb.BackBuffer, _bufferBits.Length);
+
                 _wb.AddDirtyRect(new Int32Rect(0, 0, (int)_wb.Width, (int)_wb.Height));
-                _image.Release();
                 _wb.Unlock();
                 _imageBrush.ImageSource = _wb;
             }));
@@ -120,12 +90,9 @@ namespace WallWater
         {
             _originalImage = new FastBitmap((Bitmap)(bitmap).Clone(), _BITS);
             _originalImage.LockBits();
-            _image = new FastBitmap((Bitmap)(bitmap).Clone(), _BITS);
-            _bitmapOriginalBytes = new byte[_BITS * _image.Width() * _image.Height()];
-            _bufferBits = new byte[_BITS * _image.Width() * _image.Height()];
-            _image.LockBits();
-            Marshal.Copy(_image.Data().Scan0, _bitmapOriginalBytes, 0, _bitmapOriginalBytes.Length);
-            _image.Release();
+            _bitmapOriginalBytes = new byte[_BITS * _BITMAP_WIDTH * _BITMAP_HEIGHT];
+            _bufferBits = new byte[_BITS * _BITMAP_WIDTH * _BITMAP_HEIGHT];
+            Marshal.Copy(_originalImage.Data().Scan0, _bitmapOriginalBytes, 0, _bitmapOriginalBytes.Length);
         }
 
         private void DropWater(int x, int y, int radius, int height)
@@ -148,15 +115,7 @@ namespace WallWater
                         _distance = (long)Math.Sqrt(i * i + j * j);
                         if (_distance <= radius)
                         {
-#if _JAGGED_ARRAYS
                             _waveHeight[_currentHeightBuffer][_x][_y]= (int)(height * Math.Cos((Single)_distance * _ratio));
-#endif
-#if _RECTANGULAR_ARRAYS
-                            _waveHeight[_x,_y,_currentHeightBuffer] = (int)(height * Math.Cos((Single)_distance * _ratio));
-#endif
-#if _LINEAR_ARRAYS
-                            _waveHeight[INDEX3D(_x, _y, _currentHeightBuffer)] = (int)(height * Math.Cos((Single)_distance * _ratio));
-#endif
                         }
                     }
                 }
@@ -232,46 +191,18 @@ namespace WallWater
                     _bufferBits[offset + 2] = _bitmapOriginalBytes[offset2 + 2];
                 }
             }
-            _image.LockBits();
-            Marshal.Copy(_bufferBits,0,_image.Data().Scan0, _bufferBits.Length);
+
             _currentHeightBuffer = _newHeightBuffer;
             DrawToBrush();
         }
         private void waterTime_Tick(object sender, EventArgs e)
         {
-            if (_image.IsLocked()) return;
             waterTime.Stop();
             PaintWater();
             waterTime.Start();
         }
       
-        private void CreateWaterDrops()
-        {
-            int _dropX;
-            int _dropY;
-            int _dropRadius;
-            int _height;
-
-            int _percent = (int)(0.0015 * (this.Width + this.Height));
-            _drops = new DropData[100];
-
-            for (int i = 0; i < _drops.Length; i++)
-            {
-                _dropX = _r.Next(_BITMAP_WIDTH);
-                _dropY = _r.Next(_BITMAP_HEIGHT);
-                _height = _r.Next(400);
-                _dropRadius = _r.Next(4 * _percent);
-
-                if (_dropRadius < 4) _dropRadius = 4;
-
-                _drops[i].x = _dropX;
-                _drops[i].y = _dropY;
-                _drops[i].radius = _dropRadius;
-                _drops[i].height = _height;
-            }
-
-        }
-
+      
         private void ImageGrid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             var pos = e.GetPosition(ImageGrid);

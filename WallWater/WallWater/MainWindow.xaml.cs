@@ -36,6 +36,8 @@ namespace WallWater
         ImageBrush _imageBrush= new ImageBrush();
         byte[] _bufferBits;
 
+        const int MaxHeight = 10000;
+        const int MinHeight = -10000;
         private static int[][][] _waveHeight;
 
 
@@ -148,9 +150,10 @@ namespace WallWater
                     //
                     //  Simulate movement.
                     //
+                    int v;
                     unchecked
                     {
-                        nw2[_y] = ((
+                        v = ((
                             cw1[_y] +
                             cw1[_y - 1] +
                             cw2[_y - 1] +
@@ -160,14 +163,22 @@ namespace WallWater
                             cw2[_y + 1] +
                             cw1[_y + 1]) >> 2)
                         - nw2[_y];
+                        if (v > MaxHeight)
+                        {
+                            v= MaxHeight;
+                        }else if (v< MinHeight)
+                        {
+                            v = MinHeight;
+                        }
                     }
                     //
                     //  Dampenning.
                     //
-                    nw2[_y] -= (nw2[_y] >> 5);
+                    nw2[_y] = v-(v >> 5);
                     //
                     //
                     //
+
                     _offX = ((nw1[_y] - nw3[_y])) >> 3;
                     _offY = ((nw2[_y - 1] - nw2[_y + 1])) >> 3;
 
@@ -182,7 +193,6 @@ namespace WallWater
                     if (_x + _offX >= _BITMAP_WIDTH - 1) _offX = _BITMAP_WIDTH - _x - 1;
                     if (_y + _offY <= 0) _offY = -_y;
                     if (_y + _offY >= _BITMAP_HEIGHT - 1) _offY = _BITMAP_HEIGHT - _y - 1;
-                    if ((_offX == 0) && (_offY == 0)) continue;
 
                     var offset = _BITS * (_x + _y * _BITMAP_WIDTH);
                     var offset2 = _BITS * (_x + _offX + (_y + _offY) * _BITMAP_WIDTH);
@@ -206,7 +216,7 @@ namespace WallWater
         private void ImageGrid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             var pos = e.GetPosition(ImageGrid);
-            DropWater((int)(pos.X *_BITMAP_WIDTH/ImageGrid.ActualWidth), (int)(pos.Y*_BITMAP_HEIGHT/ImageGrid.ActualHeight), 20, 50);
+            DropWater((int)(pos.X *_BITMAP_WIDTH/ImageGrid.ActualWidth), (int)(pos.Y*_BITMAP_HEIGHT/ImageGrid.ActualHeight), 10, 100);
         }
     }
 }

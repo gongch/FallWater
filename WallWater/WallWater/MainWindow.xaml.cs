@@ -40,7 +40,7 @@ namespace WallWater
         const int MinHeight = -10000;
         private static int[][][] _waveHeight;
 
-
+        PressureCommunicator _pressureCommunicator;
         public MainWindow()
         {
             InitializeComponent();
@@ -65,7 +65,20 @@ namespace WallWater
             waterTime.Tick += waterTime_Tick;
             waterTime.Interval = TimeSpan.FromMilliseconds(10);
             this.waterTime.Start();
+            _pressureCommunicator = new PressureCommunicator();
+            _pressureCommunicator.PressurreArrived += PressureArrived;
+            _pressureCommunicator.Start();
         }
+
+        private void PressureArrived(float x, float y, int pressure)
+        {
+            if(pressure<=10)
+            {
+                return;
+            }
+            DropWater((int)(x*_BITMAP_WIDTH), (int)(y * _BITMAP_HEIGHT), 10, pressure);
+        }
+
         WriteableBitmap _wb;
         [DllImport("msvcrt.dll", EntryPoint = "memcpy", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
         public static extern IntPtr memcpy(IntPtr dest, IntPtr src, uint count);

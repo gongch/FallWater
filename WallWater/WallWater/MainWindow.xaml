@@ -7,6 +7,17 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="350" Width="525">
     <Grid>
-        <Grid x:Name="ImageGrid" MouseLeftButtonDown="ImageGrid_MouseLeftButtonDown"></Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition></RowDefinition>
+        </Grid.RowDefinitions>
+        <StackPanel Orientation="Horizontal">
+            <Menu Grid.Row="0" Margin="16,0,0,0" FontSize="16" Background="Transparent">
+                <MenuItem Header="设置" Click="MenuItem_Settings_Click">
+                </MenuItem>
+            </Menu>
+            <TextBlock x:Name="tbConnectStatus" VerticalAlignment="Center" Margin="5"></TextBlock>
+        </StackPanel>
+        <Grid Grid.Row="1" x:Name="ImageGrid" MouseLeftButtonDown="ImageGrid_MouseLeftButtonDown"></Grid>
     </Grid>
 </Window>

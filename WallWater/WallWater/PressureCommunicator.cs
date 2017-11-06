@@ -124,7 +124,14 @@ namespace WallWater
             byte[] buffer = new byte[PackageLength * 2];
             byte[] bufferClone = new byte[PackageLength * 2];
             int bufferLength = 0;
-            while(!_stopEvent.WaitOne(waitInterval))
+            if(null == _serialPort)
+            {
+                DeviceConnectionStatusChanged?.Invoke(EnumDeviceConnectionStatus.Disconnected);
+                return;
+            }
+            DeviceConnectionStatusChanged?.Invoke(EnumDeviceConnectionStatus.Connected);
+
+            while (!_stopEvent.WaitOne(waitInterval))
             {
                 if(_serialPort.BytesToRead == 0)
                 {

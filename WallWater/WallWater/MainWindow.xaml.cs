@@ -67,9 +67,33 @@ namespace WallWater
             this.waterTime.Start();
             _pressureCommunicator = new PressureCommunicator();
             _pressureCommunicator.PressurreArrived += PressureArrived;
+            _pressureCommunicator.DeviceConnectionStatusChanged += DeviceConnectionStatusChanged;
             _pressureCommunicator.Start();
         }
 
+        public void DeviceConnectionStatusChanged(EnumDeviceConnectionStatus status)
+        {
+            tbConnectStatus.Dispatcher.Invoke(new Action(() =>
+            {
+                switch (status)
+                {
+                    case EnumDeviceConnectionStatus.Connected:
+                        tbConnectStatus.Text = "连接设备成功";
+                        tbConnectStatus.Foreground = System.Windows.Media.Brushes.Green;
+                        break;
+                    case EnumDeviceConnectionStatus.Disconnected:
+                        tbConnectStatus.Text = "连接设备失败";
+                        tbConnectStatus.Foreground = System.Windows.Media.Brushes.Red;
+                        break;
+                    case EnumDeviceConnectionStatus.Initial:
+                        tbConnectStatus.Text = "";
+                        break;
+                }
+
+            }
+        ));
+
+        }
         private void PressureArrived(float x, float y, int pressure)
         {
             if(pressure<=10)
@@ -230,6 +254,11 @@ namespace WallWater
         {
             var pos = e.GetPosition(ImageGrid);
             DropWater((int)(pos.X *_BITMAP_WIDTH/ImageGrid.ActualWidth), (int)(pos.Y*_BITMAP_HEIGHT/ImageGrid.ActualHeight), 10, 100);
+        }
+
+        private void MenuItem_Settings_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }
